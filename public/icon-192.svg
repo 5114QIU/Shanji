@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
+  <rect width="192" height="192" fill="#c2410c" rx="32"/>
+  <g fill="#ffffff">
+    <!-- 电影胶片图案 -->
+    <rect x="40" y="56" width="112" height="80" rx="8" fill="none" stroke="#ffffff" stroke-width="6"/>
+    <!-- 胶片孔 -->
+    <rect x="52" y="48" width="12" height="16" rx="2" fill="#ffffff"/>
+    <rect x="128" y="48" width="12" height="16" rx="2" fill="#ffffff"/>
+    <rect x="52" y="128" width="12" height="16" rx="2" fill="#ffffff"/>
+    <rect x="128" y="128" width="12" height="16" rx="2" fill="#ffffff"/>
+    <!-- 播放按钮 -->
+    <polygon points="80,76 120,96 80,116" fill="#ffffff"/>
+  </g>
+</svg>

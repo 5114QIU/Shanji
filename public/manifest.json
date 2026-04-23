@@ -1,0 +1,25 @@
+{
+  "name": "闪记 - 剧集记录",
+  "short_name": "闪记",
+  "description": "记录看过的每一部好剧，留下那一刻的真实感悟",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#c2410c",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["entertainment", "lifestyle"]
+}

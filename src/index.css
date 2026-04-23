@@ -1,0 +1,46 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Manrope:wght@400;500;700&family=Zhi+Mang+Xing&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-serif: "Noto Serif SC", serif;
+  --font-sans: "Manrope", sans-serif;
+  --font-handwriting: "Zhi+Mang+Xing", cursive;
+
+  --color-primary: #831412;
+  --color-primary-container: #a42d26;
+  --color-on-primary: #ffffff;
+  --color-background: #fbf9f5;
+  --color-surface: #fbf9f5;
+  --color-surface-container: #efeeea;
+  --color-surface-container-low: #f5f3ef;
+  --color-surface-container-high: #eae8e4;
+  --color-outline: #8c716d;
+  --color-on-surface: #1b1c1a;
+  --color-on-surface-variant: #58413e;
+}
+
+@layer base {
+  body {
+    @apply bg-background text-on-surface font-sans;
+    background-image: url("https://www.transparenttextures.com/patterns/paper-fibers.png");
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif;
+  }
+}
+
+.paper-texture {
+  background-image: url("https://www.transparenttextures.com/patterns/paper-fibers.png");
+}
+
+.ink-stamp {
+  transform: rotate(-12deg);
+  border: 3px double currentColor;
+  mask-image: radial-gradient(circle, black 50%, rgba(0, 0, 0, 0.5) 100%);
+}
+
+.journal-spine {
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(to right, #efeeea 0%, #dbdad6 50%, #efeeea 100%);
+}
