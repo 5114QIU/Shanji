@@ -22,6 +22,7 @@ import { PWAInstallPrompt, useServiceWorker } from './components/PWAInstallPromp
 import { useAuth } from './hooks/useAuth';
 import { useEntries } from './hooks/useEntries';
 import { useSearch } from './hooks/useSearch';
+import { aiSemanticSearch } from './api/aiSearch';
 import { DramaEntry } from './types';
 
 export default function App() {
@@ -65,8 +66,12 @@ function AppContent() {
   const [selectedEntry, setSelectedEntry] = useState<DramaEntry | null>(null);
   const [activeStatus, setActiveStatus] = useState<'watching' | 'completed' | 'planned'>('completed');
   const [activeType, setActiveType] = useState<'all' | 'tv' | 'movie'>('all');
+  const [sortMode, setSortMode] = useState<'year' | 'rating'>('year');
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [aiSearchMode, setAiSearchMode] = useState(false);
+  const [isAiSearching, setIsAiSearching] = useState(false);
+  const [aiSearchResults, setAiSearchResults] = useState<DramaEntry[]>([]);
 
   // 用户登录后加载数据
   useEffect(() => {
@@ -121,6 +126,35 @@ function AppContent() {
     setIsEntryModalOpen(false);
     setEditingEntry(null);
   };
+
+  // AI 语义搜索
+  useEffect(() => {
+    if (!aiSearchMode || !searchQuery.trim()) {
+      setAiSearchResults([]);
+      return;
+    }
+
+    const performAiSearch = async () => {
+      setIsAiSearching(true);
+      try {
+        console.log('Performing AI search:', searchQuery);
+        const results = await aiSemanticSearch(searchQuery, entries);
+        console.log('AI search results:', results);
+        setAiSearchResults(results);
+      } catch (error) {
+        console.error('AI search error:', error);
+        // 显示错误提示
+        alert(`AI搜索失败: ${error instanceof Error ? error.message : '未知错误'}`);
+        setAiSearchResults([]);
+      } finally {
+        setIsAiSearching(false);
+      }
+    };
+
+    // 防抖处理
+    const timer = setTimeout(performAiSearch, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery, aiSearchMode, entries]);
 
   // 切换状态标签时清空选择
   const handleStatusChange = (status: 'watching' | 'completed' | 'planned') => {
@@ -263,7 +297,9 @@ function AppContent() {
       <Navbar
         user={user}
         searchQuery={searchQuery}
+        aiSearchMode={aiSearchMode}
         onSearchChange={setSearchQuery}
+        onAiSearchModeChange={setAiSearchMode}
         onLogout={handleLogout}
         onImport={() => setIsImportModalOpen(true)}
       />
@@ -274,10 +310,12 @@ function AppContent() {
           entries={entries}
           activeStatus={activeStatus}
           activeType={activeType}
+          sortMode={sortMode}
           selectMode={selectMode}
           selectedCount={selectedIds.length}
           onStatusChange={handleStatusChange}
           onTypeChange={handleTypeChange}
+          onSortModeChange={setSortMode}
           onToggleSelectMode={handleToggleSelectMode}
           onSelectAll={handleSelectAll}
           onDeleteSelected={handleDeleteSelected}
@@ -287,9 +325,12 @@ function AppContent() {
           entries={entries}
           activeStatus={activeStatus}
           activeType={activeType}
-          sortMode="year"
+          sortMode={sortMode}
           searchQuery={searchQuery}
           searchResults={searchResults}
+          aiSearchMode={aiSearchMode}
+          isAiSearching={isAiSearching}
+          aiSearchResults={aiSearchResults}
           onStatusChange={handleStatusChange}
           onEntryClick={setSelectedEntry}
           onDragEnd={handleDragEnd}

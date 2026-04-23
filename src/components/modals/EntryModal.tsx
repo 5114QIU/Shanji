@@ -23,7 +23,7 @@ import {
   TMDBSearchResult,
   TMDBMovieResult
 } from '../../tmdb';
-import { ReflectionModal } from './ReflectionModal';
+
 
 interface EntryModalProps {
   onClose: () => void;
@@ -43,7 +43,6 @@ export function EntryModal({ onClose, onSave, initialData, isSaving }: EntryModa
     actors: initialData?.actors?.join(' / ') || '',
     platform: initialData?.platform || '',
     summary: initialData?.summary || '',
-    reflection: initialData?.reflection || '',
     releaseDate: initialData?.releaseDate || '',
     watchCount: initialData?.watchCount || 1,
     rating: initialData?.rating || 5,
@@ -60,7 +59,7 @@ export function EntryModal({ onClose, onSave, initialData, isSaving }: EntryModa
   const [searchResults, setSearchResults] = useState<(TMDBSearchResult | TMDBMovieResult)[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchFilter, setSearchFilter] = useState<'all' | 'tv' | 'movie'>('all');
-  const [showReflectionModal, setShowReflectionModal] = useState(false);
+
   const [newTag, setNewTag] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
@@ -192,7 +191,7 @@ export function EntryModal({ onClose, onSave, initialData, isSaving }: EntryModa
       actors: formData.actors.split(' / ').filter(a => a.trim()),
       platform: formData.platform,
       summary: formData.summary,
-      reflection: formData.reflection,
+      reflection: '',
       reflections: initialData?.reflections || [],
       releaseDate: formData.releaseDate,
       watchCount: formData.watchCount,
@@ -625,77 +624,54 @@ export function EntryModal({ onClose, onSave, initialData, isSaving }: EntryModa
 
           <div className="h-px bg-outline/10 my-2"></div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="space-y-6">
-              {/* 爱心按钮评分 */}
-              <div className="flex flex-col gap-3">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-primary">喜爱程度</label>
-                <div className="text-center">
-                  <div className="flex justify-center flex-wrap gap-1">
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((level) => (
-                      <button
-                        key={level}
-                        onClick={() => {
-                          setFormData({ ...formData, rating: level });
-                        }}
-                        className={`text-lg transition-all duration-200 cursor-pointer ${formData.rating >= level ? 'text-red-500 scale-110' : 'text-gray-300'}`}
-                        title={`${level} 颗心`}
-                      >
-                        {formData.rating >= level ? '❤️' : '🤍'}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-primary">情感标签</label>
-                <div className="flex flex-wrap gap-2">
-                  {formData.tags.map(t => (
-                    <span key={t} className="px-3 py-1 rounded-full text-xs bg-primary text-on-primary flex items-center gap-1.5">
-                      {t}
-                      <X className="w-3 h-3 cursor-pointer" onClick={() => setFormData({ ...formData, tags: formData.tags.filter(tag => tag !== t) })} />
-                    </span>
-                  ))}
-                  <div className="flex gap-2 items-center">
-                    <input
-                      type="text"
-                      value={newTag}
-                      onChange={(e) => setNewTag(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleAddTag()}
-                      placeholder="新标签"
-                      className="w-24 bg-surface-container-lowest border border-outline/10 rounded-full px-3 py-1 text-xs focus:ring-1 focus:ring-primary outline-none"
-                    />
+          <div className="space-y-6">
+            {/* 爱心按钮评分 */}
+            <div className="flex flex-col gap-3">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-primary">喜爱程度</label>
+              <div className="text-center">
+                <div className="flex justify-center flex-wrap gap-1">
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((level) => (
                     <button
-                      onClick={handleAddTag}
-                      className="p-1 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                      key={level}
+                      onClick={() => {
+                        setFormData({ ...formData, rating: level });
+                      }}
+                      className={`text-lg transition-all duration-200 cursor-pointer ${formData.rating >= level ? 'text-red-500 scale-110' : 'text-gray-300'}`}
+                      title={`${level} 颗心`}
                     >
-                      <Plus className="w-4 h-4" />
+                      {formData.rating >= level ? '❤️' : '🤍'}
                     </button>
-                  </div>
+                  ))}
                 </div>
               </div>
             </div>
 
             <div className="flex flex-col gap-2">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-primary">日记感悟</label>
-              <button
-                type="button"
-                onClick={() => setShowReflectionModal(true)}
-                className="flex-1 bg-surface-container-lowest rounded-lg p-4 border border-outline/10 text-left hover:border-primary/30 transition-colors group relative overflow-hidden min-h-[120px]"
-              >
-                {formData.reflection && formData.reflection !== '<p></p>' ? (
-                  <div
-                    className="font-handwriting text-lg leading-relaxed text-on-surface line-clamp-4"
-                    dangerouslySetInnerHTML={{ __html: formData.reflection }}
+              <label className="text-[10px] font-bold uppercase tracking-widest text-primary">情感标签</label>
+              <div className="flex flex-wrap gap-2">
+                {formData.tags.map(t => (
+                  <span key={t} className="px-3 py-1 rounded-full text-xs bg-primary text-on-primary flex items-center gap-1.5">
+                    {t}
+                    <X className="w-3 h-3 cursor-pointer" onClick={() => setFormData({ ...formData, tags: formData.tags.filter(tag => tag !== t) })} />
+                  </span>
+                ))}
+                <div className="flex gap-2 items-center">
+                  <input
+                    type="text"
+                    value={newTag}
+                    onChange={(e) => setNewTag(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddTag()}
+                    placeholder="新标签"
+                    className="w-24 bg-surface-container-lowest border border-outline/10 rounded-full px-3 py-1 text-xs focus:ring-1 focus:ring-primary outline-none"
                   />
-                ) : (
-                  <span className="text-on-surface-variant/50 italic">点击写下那一刻的真实感悟...</span>
-                )}
-                <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Edit3 className="w-4 h-4 text-primary" />
+                  <button
+                    onClick={handleAddTag}
+                    className="p-1 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
                 </div>
-              </button>
+              </div>
             </div>
           </div>
 
@@ -732,23 +708,7 @@ export function EntryModal({ onClose, onSave, initialData, isSaving }: EntryModa
         </button>
       </motion.div>
 
-      {/* 感悟编辑弹窗 */}
-      {showReflectionModal && (
-        <ReflectionModal
-          content={formData.reflection}
-          title={formData.title}
-          tags={formData.tags}
-          onClose={() => setShowReflectionModal(false)}
-          onSave={(content, newTags) => {
-            setFormData({
-              ...formData,
-              reflection: content,
-              ...(newTags && { tags: newTags })
-            });
-            setShowReflectionModal(false);
-          }}
-        />
-      )}
+
     </div>
   );
 }

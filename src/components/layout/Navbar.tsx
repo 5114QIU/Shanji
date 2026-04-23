@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { Search, LogOut, Upload, Mic, MicOff } from 'lucide-react';
+import { Search, LogOut, Upload, Mic, MicOff, Sparkles } from 'lucide-react';
 import type { User } from '@supabase/supabase-js';
 
 // 简化的 SpeechRecognition 类型声明
@@ -17,12 +17,14 @@ interface WindowWithSpeechRecognition extends Window {
 interface NavbarProps {
   user: User | null;
   searchQuery: string;
+  aiSearchMode: boolean;
   onSearchChange: (query: string) => void;
+  onAiSearchModeChange: (enabled: boolean) => void;
   onLogout: () => void;
   onImport: () => void;
 }
 
-export function Navbar({ user, searchQuery, onSearchChange, onLogout, onImport }: NavbarProps) {
+export function Navbar({ user, searchQuery, aiSearchMode, onSearchChange, onAiSearchModeChange, onLogout, onImport }: NavbarProps) {
   if (!user) return null;
 
   const [isListening, setIsListening] = useState(false);
@@ -81,14 +83,21 @@ export function Navbar({ user, searchQuery, onSearchChange, onLogout, onImport }
             <Search className="w-4 h-4 text-gray-400 mr-2.5" />
             <input
               type="text"
-              placeholder="搜索你的档案..."
+              placeholder={aiSearchMode ? "尝试：找我之前看过的高分悬疑剧..." : "搜索你的档案..."}
               className="bg-transparent border-none outline-none focus:outline-none focus:ring-0 w-full text-gray-700 placeholder:text-gray-400 text-sm"
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
             />
             <button
+              onClick={() => onAiSearchModeChange(!aiSearchMode)}
+              className={`p-1.5 rounded-full transition-colors ml-2 ${aiSearchMode ? 'bg-primary text-white' : 'hover:bg-gray-200 text-gray-400'}`}
+              title={aiSearchMode ? "关闭AI搜索" : "开启AI语义搜索"}
+            >
+              <Sparkles className="w-4 h-4" />
+            </button>
+            <button
               onClick={isListening ? stopVoiceRecognition : startVoiceRecognition}
-              className="p-1.5 hover:bg-gray-200 rounded-full transition-colors ml-2"
+              className="p-1.5 hover:bg-gray-200 rounded-full transition-colors ml-1"
               title={isListening ? "停止语音录入" : "语音录入"}
             >
               {isListening ? (
@@ -158,14 +167,21 @@ export function Navbar({ user, searchQuery, onSearchChange, onLogout, onImport }
           <Search className="w-4 h-4 text-gray-400 mr-2 flex-shrink-0" />
           <input
             type="text"
-            placeholder="搜索你的档案..."
+            placeholder={aiSearchMode ? "尝试：找我之前看过的高分悬疑剧..." : "搜索你的档案..."}
             className="bg-transparent border-none outline-none focus:outline-none focus:ring-0 w-full text-gray-700 placeholder:text-gray-400 text-sm"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
           />
           <button
+            onClick={() => onAiSearchModeChange(!aiSearchMode)}
+            className={`p-1.5 rounded-full transition-colors ml-1 flex-shrink-0 ${aiSearchMode ? 'bg-primary text-white' : 'hover:bg-gray-200 text-gray-400'}`}
+            title={aiSearchMode ? "关闭AI搜索" : "开启AI语义搜索"}
+          >
+            <Sparkles className="w-4 h-4" />
+          </button>
+          <button
             onClick={isListening ? stopVoiceRecognition : startVoiceRecognition}
-            className="p-1.5 hover:bg-gray-200 rounded-full transition-colors ml-2 flex-shrink-0"
+            className="p-1.5 hover:bg-gray-200 rounded-full transition-colors ml-1 flex-shrink-0"
             title={isListening ? "停止语音录入" : "语音录入"}
           >
             {isListening ? (
