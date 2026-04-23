@@ -29,12 +29,16 @@ export async function aiSemanticSearch(
 
     if (error) {
       console.error('Edge Function error:', error);
-      throw new Error(`Edge Function error: ${error.message}`);
+      // 当Edge Function调用失败时，回退到简单的关键词搜索
+      console.log('Falling back to keyword search...');
+      return fallbackKeywordSearch(query, entries);
     }
 
     if (!data.success) {
       console.error('AI search failed:', data.error);
-      throw new Error(data.error || 'AI search error');
+      // 当AI搜索失败时，回退到简单的关键词搜索
+      console.log('Falling back to keyword search...');
+      return fallbackKeywordSearch(query, entries);
     }
 
     const matchedIds: string[] = data.data.ids;
@@ -54,6 +58,45 @@ export async function aiSemanticSearch(
     return result;
   } catch (error) {
     console.error('AI search error:', error);
-    throw error;
+    // 当发生异常时，回退到简单的关键词搜索
+    console.log('Falling back to keyword search...');
+    return fallbackKeywordSearch(query, entries);
   }
+}
+
+/**
+ * 回退的关键词搜索
+ * 当AI搜索失败时使用
+ */
+function fallbackKeywordSearch(query: string, entries: DramaEntry[]): DramaEntry[] {
+  const lowerQuery = query.toLowerCase();
+  
+  return entries.filter(entry => {
+    // 搜索标题
+    if (entry.title.toLowerCase().includes(lowerQuery)) {
+      return true;
+    }
+    
+    // 搜索演员
+    if (entry.actors.some(actor => actor.toLowerCase().includes(lowerQuery))) {
+      return true;
+    }
+    
+    // 搜索标签
+    if (entry.tags.some(tag => tag.toLowerCase().includes(lowerQuery))) {
+      return true;
+    }
+    
+    // 搜索简介
+    if (entry.summary.toLowerCase().includes(lowerQuery)) {
+      return true;
+    }
+    
+    // 搜索感悟
+    if (entry.reflection && entry.reflection.toLowerCase().includes(lowerQuery)) {
+      return true;
+    }
+    
+    return false;
+  });
 }
