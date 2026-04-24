@@ -14,9 +14,10 @@ interface JournalModalProps {
   onClose: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onSaveReflections?: (entryId: string, reflections: Reflection[]) => Promise<void>;
 }
 
-export function JournalModal({ entry, onClose, onEdit, onDelete }: JournalModalProps) {
+export function JournalModal({ entry, onClose, onEdit, onDelete, onSaveReflections }: JournalModalProps) {
   const [activeTab, setActiveTab] = useState<'info' | 'reflections'>('info');
   const [isRecording, setIsRecording] = useState(false);
   const [newReflection, setNewReflection] = useState('');
@@ -55,7 +56,7 @@ export function JournalModal({ entry, onClose, onEdit, onDelete }: JournalModalP
           }
         };
 
-        mediaRecorder.onstop = () => {
+        mediaRecorder.onstop = async () => {
           const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
           // 创建音频URL
           const audioUrl = URL.createObjectURL(audioBlob);
@@ -71,11 +72,22 @@ export function JournalModal({ entry, onClose, onEdit, onDelete }: JournalModalP
           const updatedReflections = [...reflections, newRef];
           setReflections(updatedReflections);
 
+          // 保存到数据库
+          if (onSaveReflections) {
+            try {
+              await onSaveReflections(entry.id, updatedReflections);
+              console.log('语音感悟已保存到数据库');
+            } catch (error) {
+              console.error('保存语音感悟失败:', error);
+              alert('保存到数据库失败，但本地记录已保存');
+            }
+          }
+
           // 自动进行语音转文字
           transcribeAudio(audioBlob);
 
-          // 显示成功提示
-          alert('录音保存成功！正在进行语音转文字...');
+          // 移除成功提示，让保存过程更加平滑
+          console.log('录音保存成功，正在进行语音转文字...');
         };
 
         mediaRecorder.start();
@@ -94,7 +106,7 @@ export function JournalModal({ entry, onClose, onEdit, onDelete }: JournalModalP
   };
 
   // 添加新感悟
-  const addReflection = () => {
+  const addReflection = async () => {
     if (newReflection.trim()) {
       const newRef: Reflection = {
         id: `${entry.id}-${Date.now()}`,
@@ -104,8 +116,21 @@ export function JournalModal({ entry, onClose, onEdit, onDelete }: JournalModalP
       const updatedReflections = [...reflections, newRef];
       setReflections(updatedReflections);
       setNewReflection('');
-      // 显示成功提示
-      alert('感悟保存成功！');
+
+      // 保存到数据库
+      if (onSaveReflections) {
+        try {
+          await onSaveReflections(entry.id, updatedReflections);
+          console.log('感悟已保存到数据库');
+        } catch (error) {
+          console.error('保存感悟失败:', error);
+          alert('保存到数据库失败，但本地记录已保存');
+          return;
+        }
+      }
+
+      // 移除成功提示，让保存过程更加平滑
+      console.log('感悟保存成功！');
     } else {
       alert('请输入感悟内容');
     }
@@ -322,14 +347,6 @@ export function JournalModal({ entry, onClose, onEdit, onDelete }: JournalModalP
                   <p className="text-on-surface-variant leading-relaxed text-xs md:text-sm opacity-80">
                     {entry.summary}
                   </p>
-                </section>
-
-                <section className="space-y-3 md:space-y-4">
-                  <h3 className="text-xs font-bold text-primary tracking-[0.2em] uppercase">个人总结</h3>
-                  <div className="text-on-surface/80">
-                    <RichTextContent content={entry.reflection} />
-                    <p className="mt-4 md:mt-8 text-right pr-4 italic text-on-surface-variant">— 拾光者</p>
-                  </div>
                 </section>
               </article>
 

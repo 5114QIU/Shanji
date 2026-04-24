@@ -367,7 +367,7 @@ export function EntryHeader({
                   : 'text-on-surface-variant hover:bg-surface-container-high'
                   }`}
               >
-                剧集
+                电视剧
               </button>
               <button
                 onClick={() => onTypeChange('movie')}

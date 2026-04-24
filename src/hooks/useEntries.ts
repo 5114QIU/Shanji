@@ -77,6 +77,8 @@ export function useEntries(user: User | null, authChecked: boolean) {
     setSaving(true);
 
     try {
+      console.log('开始保存影集到数据库:', { id: entry.id, title: entry.title });
+
       // 转换前端字段到数据库格式
       const dbData: any = {
         user_id: user.id,
@@ -88,6 +90,7 @@ export function useEntries(user: User | null, authChecked: boolean) {
         platform: entry.platform,
         summary: entry.summary,
         reflection: entry.reflection,
+        reflections: entry.reflections || [],
         date: entry.date,
         release_date: entry.releaseDate,
         watch_count: entry.watchCount,
@@ -100,24 +103,36 @@ export function useEntries(user: User | null, authChecked: boolean) {
         type: entry.type || 'tv',
       };
 
+      console.log('准备保存的数据:', { reflections: dbData.reflections });
+
       // 只在 entry.order 存在时添加 order 字段
       if (entry.order !== undefined) {
         dbData.order = entry.order;
       }
 
       if (entry.id) {
+        console.log('更新现有影集:', entry.id);
         const { error } = await supabase
           .from('dramas')
           .update(dbData)
           .eq('id', entry.id);
 
-        if (error) throw error;
+        if (error) {
+          console.error('数据库更新错误:', error);
+          throw error;
+        }
+        console.log('影集更新成功');
       } else {
+        console.log('创建新影集');
         const { error } = await supabase
           .from('dramas')
           .insert(dbData);
 
-        if (error) throw error;
+        if (error) {
+          console.error('数据库插入错误:', error);
+          throw error;
+        }
+        console.log('影集创建成功');
       }
 
       // 重新获取数据

@@ -4,7 +4,8 @@
  */
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Edit3, Menu } from 'lucide-react';
+import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { Edit3, Menu, Sparkles, Home, BarChart3, User } from 'lucide-react';
 import { AnimatePresence } from 'motion/react';
 import { DndContext, DragEndEvent, DragOverlay, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, horizontalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
@@ -18,30 +19,36 @@ import { DiaryEntryCard } from './components/entries/DiaryEntryCard';
 import { EntryModal } from './components/modals/EntryModal';
 import { JournalModal } from './components/modals/JournalModal';
 import { ImportModal } from './components/modals/ImportModal';
+import { AIChatModal } from './components/modals/AIChatModal';
 import { PWAInstallPrompt, useServiceWorker } from './components/PWAInstallPrompt';
 import { useAuth } from './hooks/useAuth';
 import { useEntries } from './hooks/useEntries';
 import { useSearch } from './hooks/useSearch';
 import { aiSemanticSearch } from './api/aiSearch';
-import { DramaEntry } from './types';
+import { DramaEntry, Reflection } from './types';
+import { RecordPage } from './pages/RecordPage';
+import { StatsPage } from './pages/StatsPage';
+import { ProfilePage } from './pages/ProfilePage';
+import { BottomNavigation } from './components/layout/BottomNavigation';
 
 export default function App() {
   // 注册 Service Worker
   // useServiceWorker();
 
   return (
-    <>
+    <Router>
       <ErrorBoundary>
         <AppContent />
       </ErrorBoundary>
       {/* PWA 安装提示 - 放在 ErrorBoundary 外部 */}
       <PWAInstallPrompt />
-    </>
+    </Router>
   );
 }
 
 function AppContent() {
   const { user, authChecked, handleLogout } = useAuth();
+  const navigate = useNavigate();
 
   // 检查是否是从重置密码链接进入（放在最前面，优先处理）
   // 支持从 query、hash（#...）或路径中识别重置标志，以兼容不同打开方式（右键新标签、邮件跳转等）
@@ -62,6 +69,7 @@ function AppContent() {
 
   const [isEntryModalOpen, setIsEntryModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isAIChatModalOpen, setIsAIChatModalOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<DramaEntry | null>(null);
   const [selectedEntry, setSelectedEntry] = useState<DramaEntry | null>(null);
   const [activeStatus, setActiveStatus] = useState<'watching' | 'completed' | 'planned'>('completed');
@@ -69,9 +77,6 @@ function AppContent() {
   const [sortMode, setSortMode] = useState<'year' | 'rating'>('year');
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [aiSearchMode, setAiSearchMode] = useState(false);
-  const [isAiSearching, setIsAiSearching] = useState(false);
-  const [aiSearchResults, setAiSearchResults] = useState<DramaEntry[]>([]);
 
   // 用户登录后加载数据
   useEffect(() => {
@@ -82,7 +87,7 @@ function AppContent() {
 
   // 弹窗打开时禁止背景滚动
   useEffect(() => {
-    if (isEntryModalOpen || selectedEntry) {
+    if (isEntryModalOpen || selectedEntry || isAIChatModalOpen) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -90,7 +95,7 @@ function AppContent() {
     return () => {
       document.body.style.overflow = '';
     };
-  }, [isEntryModalOpen, selectedEntry]);
+  }, [isEntryModalOpen, selectedEntry, isAIChatModalOpen]);
 
   const handleSaveEntry = async (entry: DramaEntry) => {
     await saveEntry(entry);
@@ -106,6 +111,42 @@ function AppContent() {
       setSelectedEntry(null);
     } catch {
       alert('删除失败，请重试');
+    }
+  };
+
+  // 保存感悟到数据库
+  const handleSaveReflections = async (entryId: string, reflections: Reflection[]) => {
+    if (!user) {
+      console.error('用户未登录');
+      return;
+    }
+
+    try {
+      console.log('开始保存感悟...', { entryId, reflectionsCount: reflections.length });
+
+      // 找到对应的 entry
+      const entry = entries.find(e => e.id === entryId);
+      if (!entry) {
+        console.error('找不到对应的影集', { entryId, availableEntries: entries.map(e => e.id) });
+        throw new Error('找不到对应的影集');
+      }
+
+      console.log('找到对应的影集:', entry.title);
+
+      // 更新 entry 的 reflections
+      const updatedEntry: DramaEntry = {
+        ...entry,
+        reflections: reflections,
+      };
+
+      console.log('准备保存到数据库:', { reflections: JSON.stringify(reflections) });
+
+      // 保存到数据库
+      await saveEntry(updatedEntry);
+      console.log('感悟已保存到数据库');
+    } catch (error) {
+      console.error('保存感悟失败:', error);
+      throw error;
     }
   };
 
@@ -126,35 +167,6 @@ function AppContent() {
     setIsEntryModalOpen(false);
     setEditingEntry(null);
   };
-
-  // AI 语义搜索
-  useEffect(() => {
-    if (!aiSearchMode || !searchQuery.trim()) {
-      setAiSearchResults([]);
-      return;
-    }
-
-    const performAiSearch = async () => {
-      setIsAiSearching(true);
-      try {
-        console.log('Performing AI search:', searchQuery);
-        const results = await aiSemanticSearch(searchQuery, entries);
-        console.log('AI search results:', results);
-        setAiSearchResults(results);
-      } catch (error) {
-        console.error('AI search error:', error);
-        // 显示错误提示
-        alert(`AI搜索失败: ${error instanceof Error ? error.message : '未知错误'}`);
-        setAiSearchResults([]);
-      } finally {
-        setIsAiSearching(false);
-      }
-    };
-
-    // 防抖处理
-    const timer = setTimeout(performAiSearch, 500);
-    return () => clearTimeout(timer);
-  }, [searchQuery, aiSearchMode, entries]);
 
   // 切换状态标签时清空选择
   const handleStatusChange = (status: 'watching' | 'completed' | 'planned') => {
@@ -277,8 +289,9 @@ function AppContent() {
     );
   };
 
-  // 加载状态
-  if (loading || !authChecked) {
+  // 加载状态 - 只在记录页面显示加载状态
+  const location = useLocation();
+  if ((loading || !authChecked) && location.pathname === '/') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-surface">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
@@ -297,56 +310,75 @@ function AppContent() {
       <Navbar
         user={user}
         searchQuery={searchQuery}
-        aiSearchMode={aiSearchMode}
         onSearchChange={setSearchQuery}
-        onAiSearchModeChange={setAiSearchMode}
         onLogout={handleLogout}
         onImport={() => setIsImportModalOpen(true)}
       />
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 py-8 flex-grow w-full">
-        <EntryHeader
-          entries={entries}
-          activeStatus={activeStatus}
-          activeType={activeType}
-          sortMode={sortMode}
-          selectMode={selectMode}
-          selectedCount={selectedIds.length}
-          onStatusChange={handleStatusChange}
-          onTypeChange={handleTypeChange}
-          onSortModeChange={setSortMode}
-          onToggleSelectMode={handleToggleSelectMode}
-          onSelectAll={handleSelectAll}
-          onDeleteSelected={handleDeleteSelected}
-        />
+      <main className="flex-grow">
+        <Routes>
+          <Route path="/" element={
+            <div className="max-w-7xl mx-auto px-4 py-8 w-full">
+              <EntryHeader
+                entries={entries}
+                activeStatus={activeStatus}
+                activeType={activeType}
+                sortMode={sortMode}
+                selectMode={selectMode}
+                selectedCount={selectedIds.length}
+                onStatusChange={handleStatusChange}
+                onTypeChange={handleTypeChange}
+                onSortModeChange={setSortMode}
+                onToggleSelectMode={handleToggleSelectMode}
+                onSelectAll={handleSelectAll}
+                onDeleteSelected={handleDeleteSelected}
+              />
 
-        <EntryList
-          entries={entries}
-          activeStatus={activeStatus}
-          activeType={activeType}
-          sortMode={sortMode}
-          searchQuery={searchQuery}
-          searchResults={searchResults}
-          aiSearchMode={aiSearchMode}
-          isAiSearching={isAiSearching}
-          aiSearchResults={aiSearchResults}
-          onStatusChange={handleStatusChange}
-          onEntryClick={setSelectedEntry}
-          onDragEnd={handleDragEnd}
-          selectMode={selectMode}
-          selectedIds={selectedIds}
-          onSelect={handleSelect}
-        />
+              <EntryList
+                entries={entries}
+                activeStatus={activeStatus}
+                activeType={activeType}
+                sortMode={sortMode}
+                searchQuery={searchQuery}
+                searchResults={searchResults}
+                onStatusChange={handleStatusChange}
+                onEntryClick={setSelectedEntry}
+                onDragEnd={handleDragEnd}
+                selectMode={selectMode}
+                selectedIds={selectedIds}
+                onSelect={handleSelect}
+              />
+            </div>
+          } />
+          <Route path="/stats" element={<StatsPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+        </Routes>
       </main>
 
-      {/* Floating Action Button */}
-      <button
-        onClick={handleOpenAddModal}
-        className="fixed bottom-8 right-8 z-40 w-14 h-14 bg-primary-container text-on-primary rounded-xl flex items-center justify-center shadow-2xl hover:scale-105 active:scale-95 transition-all"
-      >
-        <Edit3 className="w-7 h-7" />
-      </button>
+      {/* 底部导航栏 */}
+      <BottomNavigation />
+
+      {/* Floating Action Buttons */}
+      <div className="fixed bottom-24 right-8 z-40 flex flex-col gap-4">
+        {/* AI Chat Button */}
+        <button
+          onClick={() => setIsAIChatModalOpen(true)}
+          className="w-14 h-14 bg-primary text-on-primary rounded-xl flex items-center justify-center shadow-2xl hover:scale-105 active:scale-95 transition-all"
+          title="AI 影集助手"
+        >
+          <Sparkles className="w-7 h-7" />
+        </button>
+
+        {/* Add Entry Button */}
+        <button
+          onClick={handleOpenAddModal}
+          className="w-14 h-14 bg-primary-container text-on-primary rounded-xl flex items-center justify-center shadow-2xl hover:scale-105 active:scale-95 transition-all"
+          title="添加影集"
+        >
+          <Edit3 className="w-7 h-7" />
+        </button>
+      </div>
 
       {/* Modals & Overlays */}
       <AnimatePresence>
@@ -364,6 +396,12 @@ function AppContent() {
             onClose={() => setSelectedEntry(null)}
             onEdit={handleOpenEditModal}
             onDelete={() => handleDeleteEntry(selectedEntry.id)}
+            onSaveReflections={handleSaveReflections}
+          />
+        )}
+        {isAIChatModalOpen && (
+          <AIChatModal
+            onClose={() => setIsAIChatModalOpen(false)}
           />
         )}
       </AnimatePresence>

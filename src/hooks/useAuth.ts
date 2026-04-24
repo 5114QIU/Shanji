@@ -21,9 +21,7 @@ export function useAuth() {
     // 监听认证状态变化
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
-      if (!session?.user) {
-        setAuthChecked(true);
-      }
+      setAuthChecked(true);
     });
 
     return () => subscription.unsubscribe();

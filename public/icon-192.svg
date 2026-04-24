@@ -1,14 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
-  <rect width="192" height="192" fill="#c2410c" rx="32"/>
-  <g fill="#ffffff">
-    <!-- 电影胶片图案 -->
-    <rect x="40" y="56" width="112" height="80" rx="8" fill="none" stroke="#ffffff" stroke-width="6"/>
-    <!-- 胶片孔 -->
-    <rect x="52" y="48" width="12" height="16" rx="2" fill="#ffffff"/>
-    <rect x="128" y="48" width="12" height="16" rx="2" fill="#ffffff"/>
-    <rect x="52" y="128" width="12" height="16" rx="2" fill="#ffffff"/>
-    <rect x="128" y="128" width="12" height="16" rx="2" fill="#ffffff"/>
-    <!-- 播放按钮 -->
-    <polygon points="80,76 120,96 80,116" fill="#ffffff"/>
-  </g>
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192" fill="none">
+  <rect x="36" y="24" width="120" height="144" rx="12" fill="white" stroke="#E5E7EB" stroke-width="6"/>
+  <rect x="48" y="36" width="96" height="120" rx="6" fill="#F9FAFB"/>
+  <!-- 装订孔 -->
+  <circle cx="60" cy="54" r="9" fill="#D1D5DB"/>
+  <circle cx="60" cy="96" r="9" fill="#D1D5DB"/>
+  <circle cx="60" cy="138" r="9" fill="#D1D5DB"/>
+  <!-- 闪电标志 -->
+  <path d="M90 60L114 108L78 108L102 156" stroke="#6366F1" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- 声波图标 -->
+  <circle cx="156" cy="156" r="30" fill="white" stroke="#6366F1" stroke-width="6"/>
+  <path d="M156 126V138" stroke="#6366F1" stroke-width="6" stroke-linecap="round"/>
+  <path d="M141 126V138" stroke="#6366F1" stroke-width="6" stroke-linecap="round"/>
+  <path d="M171 126V138" stroke="#6366F1" stroke-width="6" stroke-linecap="round"/>
+  <path d="M132 132V144" stroke="#6366F1" stroke-width="6" stroke-linecap="round"/>
+  <path d="M180 132V144" stroke="#6366F1" stroke-width="6" stroke-linecap="round"/>
 </svg>

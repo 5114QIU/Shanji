@@ -6,17 +6,39 @@
   --font-sans: "Manrope", sans-serif;
   --font-handwriting: "Zhi+Mang+Xing", cursive;
 
-  --color-primary: #831412;
-  --color-primary-container: #a42d26;
+  /* 主色调 - 沉稳的深蓝色 */
+  --color-primary: #1E40AF;
+  --color-primary-container: #1E3A8A;
   --color-on-primary: #ffffff;
-  --color-background: #fbf9f5;
-  --color-surface: #fbf9f5;
-  --color-surface-container: #efeeea;
-  --color-surface-container-low: #f5f3ef;
-  --color-surface-container-high: #eae8e4;
-  --color-outline: #8c716d;
-  --color-on-surface: #1b1c1a;
-  --color-on-surface-variant: #58413e;
+
+  /* 辅助色 - 协调的蓝绿色 */
+  --color-secondary: #0369A1;
+  --color-secondary-container: #075985;
+  --color-on-secondary: #ffffff;
+
+  /* 强调色 - 温暖的金色 */
+  --color-accent: #B45309;
+  --color-accent-container: #92400E;
+  --color-on-accent: #ffffff;
+
+  /* 中性色 - 高级灰色调 */
+  --color-background: #FAFAFA;
+  --color-surface: #FFFFFF;
+  --color-surface-container: #F3F4F6;
+  --color-surface-container-low: #F9FAFB;
+  --color-surface-container-high: #E5E7EB;
+
+  /* 文本和边框 */
+  --color-outline: #D1D5DB;
+  --color-on-surface: #1F2937;
+  --color-on-surface-variant: #4B5563;
+  --color-on-surface-variant-secondary: #6B7280;
+
+  /* 功能色 */
+  --color-error: #EF4444;
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-info: #3B82F6;
 }
 
 @layer base {
@@ -25,7 +47,12 @@
     background-image: url("https://www.transparenttextures.com/patterns/paper-fibers.png");
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply font-serif;
   }
 }
@@ -42,5 +69,5 @@
 
 .journal-spine {
   box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.1);
-  background: linear-gradient(to right, #efeeea 0%, #dbdad6 50%, #efeeea 100%);
+  background: linear-gradient(to right, #F3F4F6 0%, #E5E7EB 50%, #F3F4F6 100%);
 }
