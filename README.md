@@ -61,7 +61,7 @@
 
 ## 🔗 在线预览
 
-👉 [点击访问 Drama Diary](https://aquamarine-kitten-c482ec.netlify.app/)
+👉 [点击访问 “闪记”](https://aquamarine-kitten-c482ec.netlify.app/)
 
 ## 📄 许可证
 
