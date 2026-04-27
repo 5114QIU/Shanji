@@ -6,6 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Search, X, Plus, BookOpen, Image, Edit3, Database, Mic, MicOff } from 'lucide-react';
+import { useToast } from '../../App';
 
 // 简化的 SpeechRecognition 类型声明
 type SpeechRecognition = any;
@@ -33,6 +34,7 @@ interface EntryModalProps {
 }
 
 export function EntryModal({ onClose, onSave, initialData, isSaving }: EntryModalProps) {
+  const { addToast } = useToast();
   // 录入模式：'tmdb' = TMDB搜索 | 'manual' = 手工录入
   const [inputMode, setInputMode] = useState<'tmdb' | 'manual'>('tmdb');
   // 手机端步骤控制：'search' | 'form'
@@ -91,7 +93,7 @@ export function EntryModal({ onClose, onSave, initialData, isSaving }: EntryModa
       setRecognition(recognitionInstance);
       setIsListening(true);
     } else {
-      alert('您的浏览器不支持语音识别功能');
+      addToast('您的浏览器不支持语音识别功能', 'error');
     }
   };
 
@@ -182,7 +184,7 @@ export function EntryModal({ onClose, onSave, initialData, isSaving }: EntryModa
 
   const handleSave = () => {
     if (!formData.title) {
-      alert('请输入剧集名称');
+      addToast('请输入剧集名称', 'error');
       return;
     }
     const newEntry: DramaEntry = {

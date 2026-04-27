@@ -18,9 +18,6 @@ interface EntryListProps {
   sortMode: 'year' | 'rating';
   searchQuery: string;
   searchResults: DramaEntry[];
-  aiSearchMode?: boolean;
-  isAiSearching?: boolean;
-  aiSearchResults?: DramaEntry[];
   onStatusChange: (status: 'watching' | 'completed' | 'planned') => void;
   onEntryClick: (entry: DramaEntry) => void;
   onDragEnd: (event: DragEndEvent) => void;
@@ -61,9 +58,6 @@ export function EntryList({
   sortMode,
   searchQuery,
   searchResults,
-  aiSearchMode = false,
-  isAiSearching = false,
-  aiSearchResults = [],
   onStatusChange,
   onEntryClick,
   onDragEnd,
@@ -79,57 +73,6 @@ export function EntryList({
       }
     })
   );
-
-  // AI 搜索模式下的结果显示
-  if (aiSearchMode && searchQuery.trim()) {
-    if (isAiSearching) {
-      return (
-        <div className="text-center py-20 bg-surface-container-low rounded-xl border border-dashed border-outline/20">
-          <div className="flex flex-col items-center gap-3">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
-            <p className="text-on-surface-variant opacity-60 italic">AI 正在理解你的描述...</p>
-          </div>
-        </div>
-      );
-    }
-
-    if (aiSearchResults.length === 0) {
-      return (
-        <div className="text-center py-20 bg-surface-container-low rounded-xl border border-dashed border-outline/20">
-          <p className="text-on-surface-variant opacity-60 italic">
-            AI 没有找到匹配 "{searchQuery}" 的剧集
-          </p>
-          <p className="text-xs text-on-surface-variant opacity-40 mt-2">
-            尝试用不同的描述，比如："高分悬疑剧" 或 "范伟演的剧"
-          </p>
-        </div>
-      );
-    }
-
-    return (
-      <div className="mb-4">
-        <p className="text-sm text-on-surface-variant mb-4">
-          AI 找到 {aiSearchResults.length} 部匹配 "{searchQuery}" 的剧集
-        </p>
-        <DndContext sensors={sensors} onDragEnd={onDragEnd}>
-          <SortableContext items={aiSearchResults.map(entry => entry.id)}>
-            <div className="grid grid-cols-2 min-[600px]:grid-cols-3 min-[900px]:grid-cols-4 min-[1200px]:grid-cols-5 min-[1500px]:grid-cols-6 gap-4">
-              {aiSearchResults.map((entry) => (
-                <SortableItem
-                  key={entry.id}
-                  entry={entry}
-                  onClick={() => onEntryClick(entry)}
-                  selectMode={selectMode}
-                  selected={selectedIds.includes(entry.id)}
-                  onSelect={onSelect}
-                />
-              ))}
-            </div>
-          </SortableContext>
-        </DndContext>
-      </div>
-    );
-  }
 
   // 当有搜索词时，显示搜索结果（不受状态标签限制）
   if (searchQuery.trim()) {

@@ -1,7 +1,7 @@
 export interface Reflection {
   id: string;
   content: string;
-  audioUrl?: string;
+  images?: string[];
   timestamp: string;
 }
 

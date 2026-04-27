@@ -6,6 +6,7 @@
 import React, { useState } from 'react';
 import { EntryHeader, EntryList } from '../components/entries/EntryList';
 import { useAuth } from '../hooks/useAuth';
+import { useToast } from '../App';
 import { useEntries } from '../hooks/useEntries';
 import { useSearch } from '../hooks/useSearch';
 import { DramaEntry } from '../types';
@@ -17,6 +18,7 @@ import { DragEndEvent } from '@dnd-kit/core';
  */
 export function RecordPage() {
   const { user, authChecked } = useAuth();
+  const { addToast } = useToast();
   const { entries, loading, fetchEntries, deleteEntry, deleteEntries, updateEntryOrder } = useEntries(user, authChecked);
   const { searchQuery, setSearchQuery, searchResults } = useSearch(entries);
   const [activeStatus, setActiveStatus] = useState<'watching' | 'completed' | 'planned'>('completed');
@@ -85,7 +87,7 @@ export function RecordPage() {
       setSelectMode(false);
       setSelectedIds([]);
     } catch {
-      alert('删除失败，请重试');
+      addToast('删除失败，请重试', 'error');
     }
   };
 

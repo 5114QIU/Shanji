@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, createContext, useContext } from 'react';
 import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
-import { Edit3, Menu, Sparkles, Home, BarChart3, User } from 'lucide-react';
+import { Edit3, Menu, Home, BarChart3, User } from 'lucide-react';
 import { AnimatePresence } from 'motion/react';
 import { DndContext, DragEndEvent, DragOverlay, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, horizontalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
@@ -19,17 +19,31 @@ import { DiaryEntryCard } from './components/entries/DiaryEntryCard';
 import { EntryModal } from './components/modals/EntryModal';
 import { JournalModal } from './components/modals/JournalModal';
 import { ImportModal } from './components/modals/ImportModal';
-import { AIChatModal } from './components/modals/AIChatModal';
 import { PWAInstallPrompt, useServiceWorker } from './components/PWAInstallPrompt';
 import { useAuth } from './hooks/useAuth';
 import { useEntries } from './hooks/useEntries';
 import { useSearch } from './hooks/useSearch';
-import { aiSemanticSearch } from './api/aiSearch';
 import { DramaEntry, Reflection } from './types';
 import { RecordPage } from './pages/RecordPage';
 import { StatsPage } from './pages/StatsPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { BottomNavigation } from './components/layout/BottomNavigation';
+import { ToastProvider } from './components/ui/Toast';
+
+// 创建 Toast 上下文
+type ToastType = 'success' | 'error' | 'info';
+
+interface ToastContextType {
+  addToast: (message: string, type?: ToastType) => void;
+}
+
+export const ToastContext = createContext<ToastContextType>({
+  addToast: (message: string, type: ToastType = 'info') => {
+    console.log(`${type}: ${message}`);
+  }
+});
+
+export const useToast = () => React.useContext(ToastContext);
 
 export default function App() {
   // 注册 Service Worker
@@ -38,7 +52,9 @@ export default function App() {
   return (
     <Router>
       <ErrorBoundary>
-        <AppContent />
+        <ToastProvider>
+          <AppContent />
+        </ToastProvider>
       </ErrorBoundary>
       {/* PWA 安装提示 - 放在 ErrorBoundary 外部 */}
       <PWAInstallPrompt />
@@ -48,6 +64,7 @@ export default function App() {
 
 function AppContent() {
   const { user, authChecked, handleLogout } = useAuth();
+  const { addToast } = useToast();
   const navigate = useNavigate();
 
   // 检查是否是从重置密码链接进入（放在最前面，优先处理）
@@ -69,7 +86,6 @@ function AppContent() {
 
   const [isEntryModalOpen, setIsEntryModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-  const [isAIChatModalOpen, setIsAIChatModalOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<DramaEntry | null>(null);
   const [selectedEntry, setSelectedEntry] = useState<DramaEntry | null>(null);
   const [activeStatus, setActiveStatus] = useState<'watching' | 'completed' | 'planned'>('completed');
@@ -87,7 +103,7 @@ function AppContent() {
 
   // 弹窗打开时禁止背景滚动
   useEffect(() => {
-    if (isEntryModalOpen || selectedEntry || isAIChatModalOpen) {
+    if (isEntryModalOpen || selectedEntry) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -95,7 +111,7 @@ function AppContent() {
     return () => {
       document.body.style.overflow = '';
     };
-  }, [isEntryModalOpen, selectedEntry, isAIChatModalOpen]);
+  }, [isEntryModalOpen, selectedEntry]);
 
   const handleSaveEntry = async (entry: DramaEntry) => {
     await saveEntry(entry);
@@ -110,7 +126,7 @@ function AppContent() {
       await deleteEntry(id);
       setSelectedEntry(null);
     } catch {
-      alert('删除失败，请重试');
+      addToast('删除失败，请重试', 'error');
     }
   };
 
@@ -144,6 +160,12 @@ function AppContent() {
       // 保存到数据库
       await saveEntry(updatedEntry);
       console.log('感悟已保存到数据库');
+
+      // 更新 selectedEntry，确保页面显示最新的感悟
+      if (selectedEntry && selectedEntry.id === entryId) {
+        setSelectedEntry(updatedEntry);
+        console.log('已更新selectedEntry，确保页面显示最新感悟');
+      }
     } catch (error) {
       console.error('保存感悟失败:', error);
       throw error;
@@ -211,7 +233,7 @@ function AppContent() {
       setSelectedIds([]);
       setSelectMode(false);
     } catch {
-      alert('删除失败，请重试');
+      addToast('删除失败，请重试', 'error');
     }
   };
 
@@ -313,6 +335,7 @@ function AppContent() {
         onSearchChange={setSearchQuery}
         onLogout={handleLogout}
         onImport={() => setIsImportModalOpen(true)}
+        onBack={() => navigate(-1)}
       />
 
       {/* Main Content */}
@@ -361,15 +384,6 @@ function AppContent() {
 
       {/* Floating Action Buttons */}
       <div className="fixed bottom-24 right-8 z-40 flex flex-col gap-4">
-        {/* AI Chat Button */}
-        <button
-          onClick={() => setIsAIChatModalOpen(true)}
-          className="w-14 h-14 bg-primary text-on-primary rounded-xl flex items-center justify-center shadow-2xl hover:scale-105 active:scale-95 transition-all"
-          title="AI 影集助手"
-        >
-          <Sparkles className="w-7 h-7" />
-        </button>
-
         {/* Add Entry Button */}
         <button
           onClick={handleOpenAddModal}
@@ -397,11 +411,6 @@ function AppContent() {
             onEdit={handleOpenEditModal}
             onDelete={() => handleDeleteEntry(selectedEntry.id)}
             onSaveReflections={handleSaveReflections}
-          />
-        )}
-        {isAIChatModalOpen && (
-          <AIChatModal
-            onClose={() => setIsAIChatModalOpen(false)}
           />
         )}
       </AnimatePresence>

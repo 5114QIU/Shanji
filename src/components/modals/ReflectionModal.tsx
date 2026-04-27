@@ -5,11 +5,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { X, Check, Bold, Italic, List, ListOrdered, Quote, Heading2, Undo, Redo, Wand2, Tag, Loader2, Sparkles, Image } from 'lucide-react';
+import { X, Check, Bold, Italic, List, ListOrdered, Quote, Heading2, Undo, Redo, Image } from 'lucide-react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
-import { polishText, extractTags } from '../../api/aiAssist';
 import { MoodCard } from '../card/MoodCard';
 
 interface ReflectionModalProps {
@@ -23,12 +22,6 @@ interface ReflectionModalProps {
 export function ReflectionModal({ content, title, tags: initialTags = [], onClose, onSave }: ReflectionModalProps) {
   const [localContent, setLocalContent] = useState(content);
   const [tags, setTags] = useState<string[]>(initialTags);
-  const [aiTags, setAiTags] = useState<string[]>([]); // AI 推荐的标签
-  const [isPolishing, setIsPolishing] = useState(false);
-  const [isExtractingTags, setIsExtractingTags] = useState(false);
-  const [showPolishResult, setShowPolishResult] = useState(false);
-  const [polishedText, setPolishedText] = useState('');
-  const [aiError, setAiError] = useState<string | null>(null);
   const [showMoodCard, setShowMoodCard] = useState(false);
 
   const editor = useEditor({
@@ -68,82 +61,9 @@ export function ReflectionModal({ content, title, tags: initialTags = [], onClos
     return null;
   }
 
-  // 获取纯文本内容
-  const getPlainText = () => {
-    return editor.getText().trim();
-  };
-
-  // AI 润色
-  const handlePolish = async () => {
-    const text = getPlainText();
-    console.log('Polish clicked, text length:', text?.length, 'text:', text);
-    if (!text) {
-      setAiError('请先写一些内容');
-      return;
-    }
-
-    setIsPolishing(true);
-    setAiError(null);
-
-    try {
-      const result = await polishText(text, title);
-      setPolishedText(result);
-      setShowPolishResult(true);
-    } catch (err: any) {
-      console.error('Polish error:', err);
-      setAiError(err.message || '润色失败，请稍后重试');
-    } finally {
-      setIsPolishing(false);
-    }
-  };
-
-  // 采用润色结果
-  const handleApplyPolish = () => {
-    editor.commands.setContent(`<p>${polishedText}</p>`);
-    setLocalContent(`<p>${polishedText}</p>`);
-    setShowPolishResult(false);
-    setPolishedText('');
-  };
-
-  // AI 提取标签
-  const handleExtractTags = async () => {
-    const text = getPlainText();
-    if (!text) {
-      setAiError('请先写一些内容');
-      return;
-    }
-
-    setIsExtractingTags(true);
-    setAiError(null);
-
-    try {
-      const result = await extractTags(text);
-      setAiTags(result);
-    } catch (err) {
-      console.error('Extract tags error:', err);
-      setAiError('提取标签失败，请稍后重试');
-    } finally {
-      setIsExtractingTags(false);
-    }
-  };
-
   // 添加标签
-  const handleAddTag = (tag: string) => {
-    if (!tags.includes(tag)) {
-      setTags([...tags, tag]);
-    }
-    // 从 AI 推荐中移除
-    setAiTags(aiTags.filter(t => t !== tag));
-  };
-
-  // 移除标签
   const handleRemoveTag = (tag: string) => {
     setTags(tags.filter(t => t !== tag));
-  };
-
-  // 撤销所有 AI 推荐的标签
-  const handleUndoAiTags = () => {
-    setAiTags([]);
   };
 
   const ToolbarButton = ({
@@ -163,13 +83,12 @@ export function ReflectionModal({ content, title, tags: initialTags = [], onClos
       onClick={onClick}
       title={title}
       disabled={disabled}
-      className={`p-2 rounded-lg transition-colors ${
-        disabled
-          ? 'opacity-50 cursor-not-allowed'
-          : isActive
-            ? 'bg-primary text-on-primary'
-            : 'text-on-surface-variant hover:bg-surface-container-high'
-      }`}
+      className={`p-2 rounded-lg transition-colors ${disabled
+        ? 'opacity-50 cursor-not-allowed'
+        : isActive
+          ? 'bg-primary text-on-primary'
+          : 'text-on-surface-variant hover:bg-surface-container-high'
+        }`}
     >
       {children}
     </button>
@@ -273,94 +192,13 @@ export function ReflectionModal({ content, title, tags: initialTags = [], onClos
         {/* 编辑区域 */}
         <div className="flex-1 overflow-y-auto p-6 md:p-10">
           <EditorContent editor={editor} />
-
-          {/* AI 润色结果预览 */}
-          {showPolishResult && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mt-6 p-4 bg-primary/5 border border-primary/20 rounded-xl"
-            >
-              <div className="flex items-center gap-2 mb-3">
-                <Sparkles className="w-4 h-4 text-primary" />
-                <span className="text-sm font-medium text-primary">AI 润色结果</span>
-              </div>
-              <p className="text-on-surface leading-relaxed mb-4">{polishedText}</p>
-              <div className="flex gap-2">
-                <button
-                  onClick={handleApplyPolish}
-                  className="px-4 py-2 bg-primary text-on-primary rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
-                >
-                  采用此版本
-                </button>
-                <button
-                  onClick={() => setShowPolishResult(false)}
-                  className="px-4 py-2 text-on-surface-variant rounded-lg text-sm font-medium hover:bg-surface-container transition-colors"
-                >
-                  保留原稿
-                </button>
-              </div>
-            </motion.div>
-          )}
         </div>
 
-        {/* AI 功能区 */}
+        {/* 情感标签区 */}
         <div className="px-6 py-4 border-t border-outline/10 bg-surface-container-lowest">
-          {/* AI 按钮 */}
-          <div className="flex items-center gap-3 mb-4">
-            <button
-              onClick={handlePolish}
-              onTouchStart={(e) => {
-                e.preventDefault();
-                handlePolish();
-              }}
-              disabled={isPolishing || isExtractingTags}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary to-primary/80 text-on-primary rounded-lg text-sm font-medium hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
-            >
-              {isPolishing ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Wand2 className="w-4 h-4" />
-              )}
-              AI 润色
-            </button>
-            <button
-              onClick={handleExtractTags}
-              onTouchStart={(e) => {
-                e.preventDefault();
-                handleExtractTags();
-              }}
-              disabled={isPolishing || isExtractingTags}
-              className="flex items-center gap-2 px-4 py-2 bg-surface-container text-on-surface-variant rounded-lg text-sm font-medium hover:bg-surface-container-high transition-colors disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
-            >
-              {isExtractingTags ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Tag className="w-4 h-4" />
-              )}
-              提取标签
-            </button>
-          </div>
-
-          {/* 错误提示 */}
-          {aiError && (
-            <div className="mb-3 text-sm text-error bg-error/10 rounded-lg px-3 py-2">
-              {aiError}
-            </div>
-          )}
-
-          {/* 情感标签区 */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-on-surface-variant">情感标签</span>
-              {aiTags.length > 0 && (
-                <button
-                  onClick={handleUndoAiTags}
-                  className="text-xs text-primary hover:text-primary/80"
-                >
-                  撤销 AI 推荐
-                </button>
-              )}
             </div>
 
             {/* 已选标签 */}
@@ -380,23 +218,6 @@ export function ReflectionModal({ content, title, tags: initialTags = [], onClos
                 </span>
               ))}
             </div>
-
-            {/* AI 推荐标签 */}
-            {aiTags.length > 0 && (
-              <div className="flex flex-wrap gap-2 pt-2 border-t border-outline/10">
-                <span className="text-xs text-on-surface-variant w-full mb-1">AI 推荐：</span>
-                {aiTags.map(tag => (
-                  <button
-                    key={tag}
-                    onClick={() => handleAddTag(tag)}
-                    className="inline-flex items-center gap-1 px-3 py-1 bg-surface-container text-on-surface-variant rounded-full text-xs font-medium hover:bg-primary/10 hover:text-primary transition-colors border border-dashed border-outline/30"
-                  >
-                    <Tag className="w-3 h-3" />
-                    {tag}
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
         </div>
 
