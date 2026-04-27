@@ -221,7 +221,7 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-primary/5 to-surface p-4 sm:p-6">
       <div className="max-w-md w-full space-y-6 sm:space-y-8">
         <div className="text-center space-y-2 sm:space-y-3">
-          <h1 className="font-serif text-4xl sm:text-5xl text-primary font-bold">Drama Diary</h1>
+          <h1 className="font-serif text-4xl sm:text-5xl text-primary font-bold">闪记</h1>
           <p className="text-on-surface-variant text-base sm:text-lg opacity-80">
             记录看过的每一部好剧，留下那一刻的真实感悟
           </p>
