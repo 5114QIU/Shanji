@@ -122,7 +122,7 @@
 
 ## 🔗 在线预览
 
-👉 [点击访问 Drama Diary](https://drama-diary-eta.vercel.app/)
+👉 [点击访问 Drama Diary](https://aquamarine-kitten-c482ec.netlify.app/)
 
 ## 📄 许可证
 
