@@ -17,9 +17,9 @@ export function StatsPage() {
   const { entries, loading, fetchEntries } = useEntries(user, authChecked);
   const [stats, setStats] = useState({
     total: 0,
-    totalMinutes: 0,
+    totalHours: 0,
     streak: 0,
-    genreDistribution: {} as Record<string, number>,
+    typeDistribution: {} as Record<string, number>,
     monthlyData: {} as Record<string, number>,
   });
 
@@ -40,32 +40,42 @@ export function StatsPage() {
       // 计算总时长（假设电影90分钟，电视剧每集45分钟）
       const totalMinutes = entries.reduce((sum, entry) => {
         if (entry.type === 'movie') {
-          return sum + 90; // 假设电影平均90分钟
+          return sum + 90;
         } else if (entry.type === 'tv' && entry.totalEpisodes) {
-          return sum + (entry.totalEpisodes * 45); // 假设每集45分钟
+          return sum + (entry.totalEpisodes * 45);
         }
-        return sum + 60; // 默认60分钟
+        return sum + 60;
       }, 0);
+
+      const totalHours = Math.floor(totalMinutes / 60);
 
       // 计算连续观影天数（streak）
       const streak = calculateStreak(entries);
 
       // 类型分布
-      const genreDistribution = entries.reduce((acc, entry) => {
-        entry.tags?.forEach((tag: string) => {
-          acc[tag] = (acc[tag] || 0) + 1;
-        });
+      const typeDistribution = entries.reduce((acc, entry) => {
+        const type = entry.type === 'movie' ? '电影' : entry.type === 'tv' ? '电视剧' :
+          entry.type === 'variety' ? '综艺' : '纪录片';
+        acc[type] = (acc[type] || 0) + 1;
         return acc;
       }, {} as Record<string, number>);
+
+      // 如果没有数据，设置默认类型分布
+      if (Object.keys(typeDistribution).length === 0) {
+        typeDistribution['电视剧'] = 1;
+        typeDistribution['电影'] = 1;
+        typeDistribution['综艺'] = 1;
+        typeDistribution['纪录片'] = 1;
+      }
 
       // 月度分布
       const monthlyData = calculateMonthlyData(entries);
 
       setStats({
         total,
-        totalMinutes,
+        totalHours,
         streak,
-        genreDistribution,
+        typeDistribution,
         monthlyData,
       });
     }
@@ -75,7 +85,6 @@ export function StatsPage() {
   const calculateStreak = (entries: any[]) => {
     if (entries.length === 0) return 0;
 
-    // 提取所有观看日期并去重排序
     const watchDates = entries
       .map(entry => {
         if (entry.watchDate) {
@@ -92,12 +101,10 @@ export function StatsPage() {
     const today = new Date().toISOString().split('T')[0];
     const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
 
-    // 检查最近的日期是否是今天或昨天
     if (watchDates[0] !== today && watchDates[0] !== yesterday) {
       return 0;
     }
 
-    // 计算连续天数
     for (let i = 0; i < watchDates.length - 1; i++) {
       const currentDate = new Date(watchDates[i]);
       const nextDate = new Date(watchDates[i + 1]);
@@ -125,7 +132,6 @@ export function StatsPage() {
       }
     });
 
-    // 生成过去12个月的数据
     const now = new Date();
     for (let i = 11; i >= 0; i--) {
       const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
@@ -138,11 +144,28 @@ export function StatsPage() {
     return monthly;
   };
 
-  // 格式化时长
-  const formatDuration = (minutes: number) => {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return `${hours}小时${mins}分钟`;
+  // 获取环形图颜色
+  const getColor = (type: string) => {
+    const colors: Record<string, string> = {
+      '电视剧': '#3B82F6',
+      '电影': '#8B5CF6',
+      '综艺': '#10B981',
+      '纪录片': '#F59E0B',
+    };
+    return colors[type] || '#6B7280';
+  };
+
+  // 计算环形图路径
+  const calculateCirclePath = (percentage: number, startAngle: number) => {
+    const radius = 45;
+    const circumference = 2 * Math.PI * radius;
+    const offset = startAngle * (circumference / 360);
+    const length = percentage * circumference;
+
+    return {
+      strokeDasharray: `${length} ${circumference}`,
+      strokeDashoffset: -offset,
+    };
   };
 
   if (!user) {
@@ -166,136 +189,114 @@ export function StatsPage() {
     );
   }
 
+  const sortedMonthlyData = Object.entries(stats.monthlyData).sort(([a], [b]) => a.localeCompare(b));
+  const maxMonthlyCount = Math.max(...Object.values(stats.monthlyData), 1);
+
+  const totalTypeCount = Object.values(stats.typeDistribution).reduce((a, b) => a + b, 0);
+  let currentAngle = 0;
+
+  // 获取当前年份
+  const currentYear = new Date().getFullYear();
+
   return (
     <div className="min-h-screen bg-background pb-20">
       <div className="max-w-4xl mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold text-on-surface mb-8 text-center">观影统计</h1>
+        {/* 标题 */}
+        <h1 className="text-xl font-bold text-on-surface mb-6 text-center">
+          {currentYear}年1月-12月
+        </h1>
 
-        {/* 观影总览 */}
-        <div className="bg-surface rounded-xl p-6 shadow-sm mb-8">
-          <h2 className="text-lg font-semibold text-on-surface mb-6">观影总览</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-surface-container rounded-lg p-4 text-center">
-              <p className="text-on-surface-variant text-sm mb-2">总观影数量</p>
-              <p className="text-3xl font-bold text-on-surface">{stats.total}</p>
-              <p className="text-xs text-on-surface-variant mt-1">部作品</p>
-            </div>
-            <div className="bg-surface-container rounded-lg p-4 text-center">
-              <p className="text-on-surface-variant text-sm mb-2">总观影时长</p>
-              <p className="text-3xl font-bold text-on-surface">{formatDuration(stats.totalMinutes)}</p>
-              <p className="text-xs text-on-surface-variant mt-1">观看时间</p>
-            </div>
-            <div className="bg-surface-container rounded-lg p-4 text-center">
-              <p className="text-on-surface-variant text-sm mb-2">连续观影</p>
-              <p className="text-3xl font-bold text-on-surface">{stats.streak}</p>
-              <p className="text-xs text-on-surface-variant mt-1">天</p>
-            </div>
+        {/* 统计卡片 */}
+        <div className="grid grid-cols-2 gap-4 mb-8">
+          <div className="bg-surface-container rounded-xl p-5 text-center shadow-sm">
+            <p className="text-on-surface-variant text-xs mb-2">观影时长(小时)</p>
+            <p className="text-3xl font-bold text-on-surface">{stats.totalHours}</p>
+            <p className="text-sm text-on-surface-variant mt-1">h</p>
+          </div>
+          <div className="bg-surface-container rounded-xl p-5 text-center shadow-sm">
+            <p className="text-on-surface-variant text-xs mb-2">记录作品(部)</p>
+            <p className="text-3xl font-bold text-on-surface">{stats.total}</p>
+            <p className="text-sm text-on-surface-variant mt-1">部</p>
           </div>
         </div>
 
-        {/* 偏好画像 */}
+        {/* 条形图 */}
         <div className="bg-surface rounded-xl p-6 shadow-sm mb-8">
-          <h2 className="text-lg font-semibold text-on-surface mb-6">偏好画像</h2>
-          <div className="space-y-4">
-            {Object.entries(stats.genreDistribution)
-              .sort(([, a], [, b]) => b - a)
-              .slice(0, 8)
-              .map(([genre, count]) => {
-                const percentage = ((count / stats.total) * 100).toFixed(1);
+          <h2 className="text-lg font-semibold text-on-surface mb-6">月度观影</h2>
+          <div className="flex items-end justify-between h-48 gap-2">
+            {sortedMonthlyData.map(([month, count]) => {
+              const height = (count / maxMonthlyCount) * 100;
+              const [, monthNum] = month.split('-');
+              return (
+                <div key={month} className="flex-1 flex flex-col items-center gap-2">
+                  <div
+                    className="w-full bg-gradient-to-t from-primary to-info rounded-t-md transition-all duration-500 ease-out"
+                    style={{ height: `${Math.max(height, 5)}%` }}
+                  ></div>
+                  <span className="text-xs text-on-surface-variant">{parseInt(monthNum)}月</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 环形图 */}
+        <div className="bg-surface rounded-xl p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-on-surface mb-6">类型分布</h2>
+          <div className="flex items-center gap-8">
+            {/* 环形图 */}
+            <div className="relative w-32 h-32 flex-shrink-0">
+              <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="45"
+                  fill="none"
+                  stroke="#E5E7EB"
+                  strokeWidth="12"
+                />
+                {Object.entries(stats.typeDistribution).map(([type, count]) => {
+                  const percentage = count / totalTypeCount;
+                  const pathProps = calculateCirclePath(percentage, currentAngle);
+                  const color = getColor(type);
+                  currentAngle += percentage * 360;
+                  return (
+                    <circle
+                      key={type}
+                      cx="50"
+                      cy="50"
+                      r="45"
+                      fill="none"
+                      stroke={color}
+                      strokeWidth="12"
+                      strokeLinecap="round"
+                      style={pathProps}
+                      className="transition-all duration-700"
+                    />
+                  );
+                })}
+              </svg>
+              {/* 中心圆 */}
+              <div className="absolute inset-3 rounded-full bg-surface flex items-center justify-center">
+                <span className="text-lg font-bold text-on-surface">{stats.total}</span>
+              </div>
+            </div>
+
+            {/* 图例 */}
+            <div className="flex-1 space-y-3">
+              {Object.entries(stats.typeDistribution).map(([type, count]) => {
+                const percentage = ((count / totalTypeCount) * 100).toFixed(0);
                 return (
-                  <div key={genre} className="flex items-center justify-between">
-                    <span className="text-on-surface font-medium">{genre}</span>
-                    <div className="flex items-center gap-3 flex-1 max-w-md">
-                      <div className="flex-1 bg-surface-container rounded-full h-3">
-                        <div
-                          className="bg-primary h-3 rounded-full transition-all duration-500 ease-out"
-                          style={{
-                            width: `${percentage}%`
-                          }}
-                        ></div>
-                      </div>
-                      <span className="text-on-surface-variant text-sm min-w-[60px] text-right">
-                        {count}部 ({percentage}%)
-                      </span>
-                    </div>
+                  <div key={type} className="flex items-center gap-3">
+                    <div
+                      className="w-3 h-3 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: getColor(type) }}
+                    ></div>
+                    <span className="text-on-surface font-medium text-sm">{type}</span>
+                    <span className="text-on-surface-variant text-sm ml-auto">{percentage}%</span>
                   </div>
                 );
               })}
-          </div>
-        </div>
-
-        {/* 时间趋势 */}
-        <div className="bg-surface rounded-xl p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-on-surface mb-6">时间趋势</h2>
-          <div className="h-64 relative">
-            {/* 折线图 */}
-            <div className="h-full w-full">
-              {/* Y轴刻度 */}
-              <div className="absolute left-0 top-0 bottom-0 w-12 flex flex-col justify-between text-xs text-on-surface-variant">
-                {[0, 2, 4, 6, 8, 10].map(num => (
-                  <div key={num} className="transform -translate-y-1/2">{num}</div>
-                ))}
-              </div>
-
-              {/* 图表区域 */}
-              <div className="ml-12 h-full relative">
-                {/* 网格线 */}
-                <div className="absolute inset-0 grid grid-rows-5">
-                  {[0, 1, 2, 3, 4].map(i => (
-                    <div key={i} className="border-b border-outline/10"></div>
-                  ))}
-                </div>
-
-                {/* 折线 */}
-                <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-                  <polyline
-                    points={Object.entries(stats.monthlyData)
-                      .sort(([a], [b]) => a.localeCompare(b))
-                      .map(([, count], index, array) => {
-                        const maxCount = Math.max(...Object.values(stats.monthlyData));
-                        const x = (index / (array.length - 1)) * 100;
-                        const y = 100 - (count / (maxCount || 1)) * 100;
-                        return `${x},${y}`;
-                      })
-                      .join(' ')}
-                    fill="none"
-                    stroke="#3b82f6"
-                    strokeWidth="2"
-                  />
-
-                  {/* 数据点 */}
-                  {Object.entries(stats.monthlyData)
-                    .sort(([a], [b]) => a.localeCompare(b))
-                    .map(([, count], index, array) => {
-                      const maxCount = Math.max(...Object.values(stats.monthlyData));
-                      const x = (index / (array.length - 1)) * 100;
-                      const y = 100 - (count / (maxCount || 1)) * 100;
-                      return (
-                        <circle
-                          key={index}
-                          cx={x}
-                          cy={y}
-                          r="3"
-                          fill="#3b82f6"
-                        />
-                      );
-                    })}
-                </svg>
-
-                {/* X轴标签 */}
-                <div className="absolute bottom-0 left-0 right-0 flex justify-between text-xs text-on-surface-variant">
-                  {Object.entries(stats.monthlyData)
-                    .sort(([a], [b]) => a.localeCompare(b))
-                    .map(([month]) => {
-                      const [year, monthNum] = month.split('-');
-                      return (
-                        <div key={month} className="transform -translate-x-1/2">
-                          {monthNum}/{year.slice(2)}
-                        </div>
-                      );
-                    })}
-                </div>
-              </div>
             </div>
           </div>
         </div>
