@@ -253,6 +253,12 @@ export function EntryModal({ onClose, onSave, initialData, isSaving }: EntryModa
               h-full overflow-hidden
             `}
           >
+            {/* 手机端：关闭按钮单独一行 */}
+            <div className="md:hidden flex justify-end mb-2">
+              <button onClick={onClose} className="p-1 text-on-surface-variant hover:text-primary transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
             <div className="flex items-center justify-between">
               <h2 className="font-serif text-2xl text-on-surface">搜索剧集</h2>
               <span className="text-xs font-medium tracking-widest text-primary/60 uppercase">TMDB 数据</span>
@@ -739,7 +745,11 @@ export function EntryModal({ onClose, onSave, initialData, isSaving }: EntryModa
           </div>
         </section>
 
-        <button onClick={onClose} className="absolute top-4 right-4 p-2 text-on-surface-variant hover:text-primary transition-colors z-10">
+        {/* 全局关闭按钮 - 手机端搜索页面不显示（已有单独的关闭按钮） */}
+        <button
+          onClick={onClose}
+          className={`absolute top-4 right-4 p-2 text-on-surface-variant hover:text-primary transition-colors z-10 ${!initialData && inputMode === 'tmdb' && mobileStep === 'search' ? 'md:block hidden' : 'block'}`}
+        >
           <X className="w-6 h-6" />
         </button>
       </motion.div>
