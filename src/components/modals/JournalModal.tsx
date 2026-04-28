@@ -9,6 +9,7 @@ import { X, Edit3, Trash2, Heart, Plus, Play, Pause, Image, Loader2, Upload, Sha
 import { DramaEntry, Reflection } from '../../types';
 import { supabase } from '../../supabase';
 import { MoodCard } from '../card/MoodCard';
+import { analytics, events } from '../../services/analytics';
 
 interface JournalModalProps {
   entry: DramaEntry;
@@ -237,7 +238,10 @@ export function JournalModal({ entry, onClose, onEdit, onDelete, onSaveReflectio
             </button>
             <div className="flex gap-2">
               <button
-                onClick={() => setShowMoodCard(true)}
+                onClick={() => {
+                  analytics.event(events.posterShareClick, { template_id: 'default', movie_name: entry.title });
+                  setShowMoodCard(true);
+                }}
                 className="w-10 h-10 flex items-center justify-center rounded-full bg-white/80 shadow-sm"
                 title="生成海报"
               >
@@ -277,7 +281,10 @@ export function JournalModal({ entry, onClose, onEdit, onDelete, onSaveReflectio
             {/* 电脑端操作按钮 */}
             <div className="hidden md:flex absolute top-6 right-8 gap-3">
               <button
-                onClick={() => setShowMoodCard(true)}
+                onClick={() => {
+                  analytics.event(events.posterShareClick, { template_id: 'default', movie_name: entry.title });
+                  setShowMoodCard(true);
+                }}
                 className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-primary/10 transition-colors"
                 title="生成海报"
               >

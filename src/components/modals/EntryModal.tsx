@@ -7,6 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Search, X, Plus, BookOpen, Image, Edit3, Database, Mic, MicOff } from 'lucide-react';
 import { useToast } from '../../App';
+import { analytics, events } from '../../services/analytics';
 
 // 简化的 SpeechRecognition 类型声明
 type SpeechRecognition = any;
@@ -136,6 +137,9 @@ export function EntryModal({ onClose, onSave, initialData, isSaving }: EntryModa
 
   // 选择搜索结果
   const handleSelect = async (item: TMDBSearchResult | TMDBMovieResult) => {
+    const title = isTVShow(item) ? item.name : item.title;
+    analytics.event(events.searchResultSelect, { movie_id: item.id, movie_name: title });
+
     try {
       const isTV = isTVShow(item);
       const detail = isTV ? await getTVDetail(item.id) : await getMovieDetail(item.id);
@@ -183,6 +187,8 @@ export function EntryModal({ onClose, onSave, initialData, isSaving }: EntryModa
   };
 
   const handleSave = () => {
+    analytics.event(events.recordSaveClick);
+
     if (!formData.title) {
       addToast('请输入剧集名称', 'error');
       return;
@@ -372,6 +378,7 @@ export function EntryModal({ onClose, onSave, initialData, isSaving }: EntryModa
               <div className="flex gap-2 p-1 bg-surface-container rounded-lg">
                 <button
                   onClick={() => {
+                    analytics.event(events.tmdbSearchAction, { search_query: '' });
                     setInputMode('tmdb');
                     setMobileStep('search');
                   }}
@@ -386,6 +393,7 @@ export function EntryModal({ onClose, onSave, initialData, isSaving }: EntryModa
                 </button>
                 <button
                   onClick={() => {
+                    analytics.event(events.manualInputClick);
                     setInputMode('manual');
                     setMobileStep('form');
                   }}

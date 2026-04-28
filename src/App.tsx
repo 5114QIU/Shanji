@@ -29,6 +29,7 @@ import { StatsPage } from './pages/StatsPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { BottomNavigation } from './components/layout/BottomNavigation';
 import { ToastProvider } from './components/ui/Toast';
+import { analytics, events } from './services/analytics';
 
 // 创建 Toast 上下文
 type ToastType = 'success' | 'error' | 'info';
@@ -66,6 +67,7 @@ function AppContent() {
   const { user, authChecked, handleLogout } = useAuth();
   const { addToast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
 
   // 检查是否是从重置密码链接进入（放在最前面，优先处理）
   // 支持从 query、hash（#...）或路径中识别重置标志，以兼容不同打开方式（右键新标签、邮件跳转等）
@@ -100,6 +102,13 @@ function AppContent() {
       fetchEntries();
     }
   }, [user, fetchEntries]);
+
+  // 首页页面浏览埋点
+  useEffect(() => {
+    if (location.pathname === '/' && user) {
+      analytics.event(events.homepageView);
+    }
+  }, [location.pathname, user]);
 
   // 弹窗打开时禁止背景滚动
   useEffect(() => {
@@ -173,6 +182,7 @@ function AppContent() {
   };
 
   const handleOpenAddModal = () => {
+    analytics.event(events.fastRecordClick);
     setEditingEntry(null);
     setIsEntryModalOpen(true);
   };
@@ -312,7 +322,6 @@ function AppContent() {
   };
 
   // 加载状态 - 只在记录页面显示加载状态
-  const location = useLocation();
   if ((loading || !authChecked) && location.pathname === '/') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-surface">

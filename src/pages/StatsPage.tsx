@@ -6,6 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useEntries } from '../hooks/useEntries';
+import { analytics, events } from '../services/analytics';
 
 /**
  * 统计回顾页面
@@ -27,6 +28,10 @@ export function StatsPage() {
       fetchEntries();
     }
   }, [user, fetchEntries]);
+
+  useEffect(() => {
+    analytics.event(events.statsView);
+  }, []);
 
   useEffect(() => {
     if (entries.length > 0) {
