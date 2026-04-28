@@ -154,25 +154,8 @@ export function Navbar({ user, searchQuery, onSearchChange, onLogout, onImport, 
         </>
       )}
 
-      {/* 统计页和个人主页导航 */}
-      {(isStatsPage || isProfilePage) && (
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            {onBack && (
-              <button
-                onClick={onBack}
-                className="p-2 hover:bg-surface-container rounded-full transition-colors"
-                title="返回"
-              >
-                <ArrowLeft className="w-5 h-5 text-on-surface" />
-              </button>
-            )}
-            <h1 className="text-lg font-semibold text-on-surface">
-              {isStatsPage ? '观影统计' : '个人中心'}
-            </h1>
-          </div>
-        </div>
-      )}
+      {/* 统计页和个人主页导航 - 简化显示 */}
+      {(isStatsPage || isProfilePage) && null}
     </nav>
   );
 }
