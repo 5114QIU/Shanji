@@ -677,31 +677,65 @@ export function EntryModal({ onClose, onSave, initialData, isSaving }: EntryModa
             </div>
           </div>
 
-          <div className="mt-6 pt-6 border-t border-outline/10 flex justify-end gap-4">
-            {/* 手机端：在TMDB模式的表单页面显示返回搜索按钮 */}
-            {!initialData && inputMode === 'tmdb' && (
+          {/* 底部按钮区域 */}
+          <div className="mt-6 pt-6 border-t border-outline/10">
+            {/* 手机端：两行布局 */}
+            <div className="md:hidden flex flex-col gap-3">
+              {/* 第一行：返回搜索和取消 */}
+              <div className="flex gap-3">
+                {!initialData && inputMode === 'tmdb' && (
+                  <button
+                    onClick={() => setMobileStep('search')}
+                    className="flex-1 py-3 text-on-surface-variant font-medium text-sm hover:bg-surface-container transition-colors rounded-lg"
+                  >
+                    返回搜索
+                  </button>
+                )}
+                <button onClick={onClose} className="flex-1 py-3 text-on-surface-variant font-medium text-sm hover:bg-surface-container transition-colors rounded-lg">
+                  取消
+                </button>
+              </div>
+              {/* 第二行：保存按钮 */}
               <button
-                onClick={() => setMobileStep('search')}
-                className="md:hidden px-6 py-2.5 text-on-surface-variant font-bold text-sm hover:bg-surface-container transition-colors rounded-lg"
+                onClick={handleSave}
+                disabled={isSaving}
+                className={`w-full flex items-center justify-center gap-2 py-3.5 bg-primary text-on-primary rounded-lg font-bold shadow-lg hover:shadow-xl active:scale-[0.98] transition-all ${isSaving ? 'opacity-70 cursor-not-allowed' : ''}`}
               >
-                返回搜索
+                {isSaving ? (
+                  <div className="w-5 h-5 border-2 border-on-primary border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  <BookOpen className="w-5 h-5" />
+                )}
+                <span>{isSaving ? '保存中...' : '保存到日记本'}</span>
               </button>
-            )}
-            <button onClick={onClose} className="px-6 py-2.5 text-on-surface-variant font-bold text-sm hover:bg-surface-container transition-colors rounded-lg">
-              取消
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={isSaving}
-              className={`flex items-center gap-3 px-10 py-3 bg-primary text-on-primary rounded-lg font-bold shadow-lg hover:shadow-xl active:scale-95 transition-all ${isSaving ? 'opacity-70 cursor-not-allowed' : ''}`}
-            >
-              {isSaving ? (
-                <div className="w-5 h-5 border-2 border-on-primary border-t-transparent rounded-full animate-spin"></div>
-              ) : (
-                <BookOpen className="w-5 h-5" />
+            </div>
+
+            {/* 电脑端：单行布局 */}
+            <div className="hidden md:flex justify-end gap-4">
+              {!initialData && inputMode === 'tmdb' && (
+                <button
+                  onClick={() => setMobileStep('search')}
+                  className="px-6 py-2.5 text-on-surface-variant font-bold text-sm hover:bg-surface-container transition-colors rounded-lg"
+                >
+                  返回搜索
+                </button>
               )}
-              <span>{isSaving ? '保存中...' : '保存到日记本'}</span>
-            </button>
+              <button onClick={onClose} className="px-6 py-2.5 text-on-surface-variant font-bold text-sm hover:bg-surface-container transition-colors rounded-lg">
+                取消
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={isSaving}
+                className={`flex items-center gap-3 px-10 py-3 bg-primary text-on-primary rounded-lg font-bold shadow-lg hover:shadow-xl active:scale-95 transition-all ${isSaving ? 'opacity-70 cursor-not-allowed' : ''}`}
+              >
+                {isSaving ? (
+                  <div className="w-5 h-5 border-2 border-on-primary border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  <BookOpen className="w-5 h-5" />
+                )}
+                <span>{isSaving ? '保存中...' : '保存到日记本'}</span>
+              </button>
+            </div>
           </div>
         </section>
 
